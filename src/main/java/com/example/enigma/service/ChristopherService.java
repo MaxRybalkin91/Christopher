@@ -10,10 +10,9 @@ import java.util.stream.Collectors;
 @Service
 @Data
 public class ChristopherService {
-    public static final Integer START_ROTOR_POSITION = 1;
-    public static final Integer END_ROTOR_POSITION = 26;
-    public static final Integer MAX_REFLECTOR_INDEX = 13;
-    public static final Integer A_CHAR_INDEX = 97;
+    public static final Integer START_ROTOR_INDEX = 1;
+    public static final Integer END_ROTOR_INDEX = 26;
+    public static final Integer MIDDLE_REFLECTOR_INDEX = 13;
     private static final Map<Integer, Character> INDEX_TO_LETTER = new HashMap<>() {{
         put(1, 'a');
         put(2, 'b');
@@ -86,8 +85,9 @@ public class ChristopherService {
         int fastRotorPosition = 1;
         int mediumRotorPosition = 1;
         int slowRotorPosition = 1;
-        int reflectorTopIndex = 0;
-        int requiredIterations = 26 * 26 * 26;
+        int reflectorTopIndexLeft = 0;
+        int reflectorTopIndexRight = 0;
+        int requiredIterations = END_ROTOR_INDEX * 26 * 26;
         int iterates = 0;
         String encodedCopy = "";
         while (!encodedCopy.contains(search)) {
@@ -97,99 +97,148 @@ public class ChristopherService {
             mediumRightToLeftIndexes = new HashMap<>();
             slowLeftToRightIndexes = new HashMap<>();
             slowRightToLeftIndexes = new HashMap<>();
-            reflector = new HashMap<>();
-            
+
             encodedCopy = encoded;
-            for (int i = START_ROTOR_POSITION; i <= END_ROTOR_POSITION; i++) {
-                fastRightToLeftIndexes.put(i, END_ROTOR_POSITION + 1 - i);
-                mediumRightToLeftIndexes.put(i, END_ROTOR_POSITION + 1 - i);
-                slowRightToLeftIndexes.put(i, END_ROTOR_POSITION + 1 - i);
+            for (int i = START_ROTOR_INDEX; i != END_ROTOR_INDEX + 1; i++) {
+                int fastPosition = END_ROTOR_INDEX + i - fastRotorPosition;
+                if (fastPosition > END_ROTOR_INDEX) {
+                    fastPosition -= END_ROTOR_INDEX;
+                } else if (fastPosition < START_ROTOR_INDEX) {
+                    fastPosition += END_ROTOR_INDEX;
+                }
+
+                int mediumPosition = END_ROTOR_INDEX + i - mediumRotorPosition;
+                if (mediumPosition > END_ROTOR_INDEX) {
+                    mediumPosition -= END_ROTOR_INDEX;
+                } else if (mediumPosition < START_ROTOR_INDEX) {
+                    mediumPosition += END_ROTOR_INDEX;
+                }
+
+                int slowPosition = END_ROTOR_INDEX + i - slowRotorPosition;
+                if (slowPosition > END_ROTOR_INDEX) {
+                    slowPosition -= END_ROTOR_INDEX;
+                } else if (slowPosition < START_ROTOR_INDEX) {
+                    slowPosition += END_ROTOR_INDEX;
+                }
+
+                fastRightToLeftIndexes.put(i, fastPosition);
+                mediumRightToLeftIndexes.put(i, mediumPosition);
+                slowRightToLeftIndexes.put(i, slowPosition);
             }
             fastLeftToRightIndexes = fastRightToLeftIndexes.entrySet().stream()
-                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
             mediumLeftToRightIndexes = mediumRightToLeftIndexes.entrySet().stream()
-                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
             slowLeftToRightIndexes = slowRightToLeftIndexes.entrySet().stream()
-                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
             fastRotorPosition++;
-            if (fastRotorPosition > END_ROTOR_POSITION) {
-                fastRotorPosition = START_ROTOR_POSITION;
+            if (fastRotorPosition > END_ROTOR_INDEX) {
+                fastRotorPosition = START_ROTOR_INDEX;
                 mediumRotorPosition += 1;
             }
-            if (mediumRotorPosition > END_ROTOR_POSITION) {
-                mediumRotorPosition = START_ROTOR_POSITION;
+            if (mediumRotorPosition > END_ROTOR_INDEX) {
+                mediumRotorPosition = START_ROTOR_INDEX;
                 slowRotorPosition += 1;
             }
-            if (slowRotorPosition > END_ROTOR_POSITION) {
+            if (slowRotorPosition > END_ROTOR_INDEX) {
                 fastRotorPosition = 1;
                 mediumRotorPosition = 1;
                 slowRotorPosition = 1;
             }
-            fillReflector(reflector, reflectorTopIndex);
+
+            if (iterates == 0) {
+                reflector = fillReflector(reflectorTopIndexLeft, reflectorTopIndexRight);
+            }
 
             final StringBuilder decoded = new StringBuilder();
             for (char toDecode : encodedCopy.toCharArray()) {
                 int firstLeftToRightIndex = LETTER_TO_INDEX.get(toDecode) - fastRotorPosition;
-                if (firstLeftToRightIndex < 1) {
-                    firstLeftToRightIndex += END_ROTOR_POSITION;
+                if (firstLeftToRightIndex < START_ROTOR_INDEX) {
+                    firstLeftToRightIndex += END_ROTOR_INDEX;
+                } else if (firstLeftToRightIndex > END_ROTOR_INDEX) {
+                    firstLeftToRightIndex -= END_ROTOR_INDEX;
                 }
                 int firstLeftToRight = fastLeftToRightIndexes.get(firstLeftToRightIndex);
 
                 int secondLeftToRightIndex = mediumRotorPosition - firstLeftToRight;
-                if (secondLeftToRightIndex < 1) {
-                    secondLeftToRightIndex += END_ROTOR_POSITION;
+                if (secondLeftToRightIndex < START_ROTOR_INDEX) {
+                    secondLeftToRightIndex += END_ROTOR_INDEX;
+                } else if (secondLeftToRightIndex > END_ROTOR_INDEX) {
+                    secondLeftToRightIndex -= END_ROTOR_INDEX;
                 }
                 int secondLeftToRight = mediumLeftToRightIndexes.get(secondLeftToRightIndex);
 
                 int thirdLeftToRightIndex = slowRotorPosition - secondLeftToRight;
-                if (thirdLeftToRightIndex < 1) {
-                    thirdLeftToRightIndex += END_ROTOR_POSITION;
+                if (thirdLeftToRightIndex < START_ROTOR_INDEX) {
+                    thirdLeftToRightIndex += END_ROTOR_INDEX;
+                } else if (firstLeftToRightIndex > END_ROTOR_INDEX) {
+                    thirdLeftToRightIndex -= END_ROTOR_INDEX;
                 }
                 int thirdLeftToRight = slowLeftToRightIndexes.get(thirdLeftToRightIndex);
                 int reflection = reflector.get(thirdLeftToRight);
 
                 int firstReflectedIndex = slowRotorPosition - reflection;
-                if (firstReflectedIndex < 1) {
-                    firstReflectedIndex += END_ROTOR_POSITION;
+                if (firstReflectedIndex < START_ROTOR_INDEX) {
+                    firstReflectedIndex += END_ROTOR_INDEX;
                 }
-                int firstRightToLeft = slowRightToLeftIndexes.get(firstReflectedIndex);
+
+                int firstRightToLeft = slowRightToLeftIndexes.get(Math.max(firstReflectedIndex, START_ROTOR_INDEX));
 
                 int secondReflectedIndex = slowRotorPosition - firstRightToLeft;
-                if (secondReflectedIndex < 1) {
-                    secondReflectedIndex += END_ROTOR_POSITION;
+                if (secondReflectedIndex < START_ROTOR_INDEX) {
+                    secondReflectedIndex += END_ROTOR_INDEX;
                 }
-                int secondRightToLeft = mediumRightToLeftIndexes.get(secondReflectedIndex);
+                int secondRightToLeft = mediumRightToLeftIndexes.get(Math.max(secondReflectedIndex, START_ROTOR_INDEX));
 
                 int thirdReflectedIndex = fastRotorPosition - secondRightToLeft;
-                if (thirdReflectedIndex < 1) {
-                    thirdReflectedIndex += END_ROTOR_POSITION;
+                if (thirdReflectedIndex < START_ROTOR_INDEX) {
+                    thirdReflectedIndex += END_ROTOR_INDEX;
                 }
-                int thirdRightToLeft = fastRightToLeftIndexes.get(thirdReflectedIndex);
+                int thirdRightToLeft = fastRightToLeftIndexes.get(Math.max(thirdReflectedIndex, START_ROTOR_INDEX));
                 decoded.append(INDEX_TO_LETTER.get(thirdRightToLeft));
             }
             encodedCopy = decoded.toString();
             iterates++;
             if (iterates == requiredIterations) {
-                reflectorTopIndex++;
+                reflectorTopIndexRight++;
+                if (reflectorTopIndexRight > END_ROTOR_INDEX - 1) {
+                    reflectorTopIndexLeft++;
+                    reflectorTopIndexRight = 0;
+                }
+                if (reflectorTopIndexLeft > END_ROTOR_INDEX - 1) {
+                    reflectorTopIndexLeft = 0;
+                    reflectorTopIndexRight = 0;
+                }
+                iterates = 0;
+                System.out.println("Reflector pairs are: " + reflector);
             }
         }
         System.out.println("Got it!!!");
     }
 
-    private void fillReflector(Map<Integer, Integer> reflector, int reflectorTopIndex) {
-        for (int i = 1; i != MAX_REFLECTOR_INDEX + 1; i++) {
-            reflector.put(i , MAX_REFLECTOR_INDEX + i);
+    private Map<Integer, Integer> fillReflector(int reflectorTopIndexLeft,
+                                                int reflectorTopIndexRight) {
+        final Map<Integer, Integer> reflector = new HashMap<>();
+        for (int i = 1; i != MIDDLE_REFLECTOR_INDEX + 1; i++) {
+            reflector.put(i, MIDDLE_REFLECTOR_INDEX + i);
         }
         reflector.putAll(reflector.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getValue, Map.Entry::getKey)));
-        reflector.entrySet().forEach(entry -> {
-            int newValue = entry.getValue() + reflectorTopIndex;
-            if (newValue > 26) {
-                newValue -= 26;
-            }
-            entry.setValue(newValue);
-        });
-        //System.out.println("Reflector pairs are: " + reflector);
+        return reflector.entrySet().stream()
+                .collect(Collectors.toMap(entry -> {
+                            int newKey = entry.getKey() + reflectorTopIndexLeft;
+                            if (newKey > END_ROTOR_INDEX) {
+                                newKey -= END_ROTOR_INDEX;
+                            }
+                            return newKey;
+                        },
+                        entry -> {
+                            int newValue = entry.getValue() + reflectorTopIndexRight;
+                            if (newValue > END_ROTOR_INDEX) {
+                                newValue -= END_ROTOR_INDEX;
+                            }
+                            return newValue;
+                        }));
     }
 }
