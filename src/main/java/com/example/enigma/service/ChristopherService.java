@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Data
@@ -70,39 +71,48 @@ public class ChristopherService {
         put('z', 26);
     }};
 
-    private Map<Character, Character> fastChars;
-    private Map<Integer, Integer> fastLeftToRightIndexes;
-    private Map<Integer, Integer> fastRightToLeftIndexes;
-    private Map<Character, Character> mediumChars;
-    private Map<Integer, Integer> mediumLeftToRightIndexes;
-    private Map<Integer, Integer> mediumRightToLeftIndexes;
-    private Map<Character, Character> slowChars;
-    private Map<Integer, Integer> slowLeftToRightIndexes;
-    private Map<Integer, Integer> slowRightToLeftIndexes;
-    private Map<Integer, Integer> reflector;
+    private Map<Character, Character> fastChars = new HashMap<>();
+    private Map<Integer, Integer> fastLeftToRightIndexes = new HashMap<>();
+    private Map<Integer, Integer> fastRightToLeftIndexes = new HashMap<>();
+    private Map<Character, Character> mediumChars = new HashMap<>();
+    private Map<Integer, Integer> mediumLeftToRightIndexes = new HashMap<>();
+    private Map<Integer, Integer> mediumRightToLeftIndexes = new HashMap<>();
+    private Map<Character, Character> slowChars = new HashMap<>();
+    private Map<Integer, Integer> slowLeftToRightIndexes = new HashMap<>();
+    private Map<Integer, Integer> slowRightToLeftIndexes = new HashMap<>();
+    private Map<Integer, Integer> reflector = new HashMap<>();
 
     public void getSettings(String encoded, String search) {
         int fastRotorPosition = 1;
         int mediumRotorPosition = 1;
         int slowRotorPosition = 1;
         int reflectorTopIndex = 1;
-        int requiredIterations = 26*26*26;
+        int requiredIterations = 26 * 26 * 26;
         int iterates = 0;
         String encodedCopy = "";
         while (!encodedCopy.contains(search)) {
+            fastLeftToRightIndexes = new HashMap<>();
+            fastRightToLeftIndexes = new HashMap<>();
+            mediumLeftToRightIndexes = new HashMap<>();
+            mediumRightToLeftIndexes = new HashMap<>();
+            slowLeftToRightIndexes = new HashMap<>();
+            slowRightToLeftIndexes = new HashMap<>();
+            
             encodedCopy = encoded;
             for (int i = START_ROTOR_POSITION; i <= END_ROTOR_POSITION; i++) {
-                fastLeftToRightIndexes.put(fastRotorPosition, i);
-                fastRightToLeftIndexes.put(i, fastRotorPosition);
-                mediumLeftToRightIndexes.put(mediumRotorPosition, i);
-                mediumRightToLeftIndexes.put(i, mediumRotorPosition);
-                slowLeftToRightIndexes.put(slowRotorPosition, i);
-                slowRightToLeftIndexes.put(i, slowRotorPosition);
+                fastRightToLeftIndexes.put(i, END_ROTOR_POSITION + 1 - i);
+                mediumRightToLeftIndexes.put(i, END_ROTOR_POSITION + 1 - i);
+                slowRightToLeftIndexes.put(i, END_ROTOR_POSITION + 1 - i);
             }
-            for (int i = 1; i <= MAX_REFLECTOR_INDEX + 1; i++) {
-                //TODO: придумать, как изменять рефлектор
-            }
+            fastLeftToRightIndexes = fastRightToLeftIndexes.entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+            mediumLeftToRightIndexes = mediumRightToLeftIndexes.entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+            slowLeftToRightIndexes = slowRightToLeftIndexes.entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
             rotate(fastRotorPosition, mediumRotorPosition, slowRotorPosition);
+            fillReflector(reflector);
 
             final StringBuilder decoded = new StringBuilder();
             for (char toDecode : encodedCopy.toCharArray()) {
@@ -146,6 +156,9 @@ public class ChristopherService {
             }
             encodedCopy = decoded.toString();
             iterates++;
+            if (iterates == requiredIterations) {
+                reflectorTopIndex++;
+            }
         }
         System.out.println("Got it!!!");
     }
@@ -165,5 +178,13 @@ public class ChristopherService {
             mediumRotorPosition = 1;
             slowRotorPosition = 1;
         }
+    }
+
+    private void fillReflector(Map<Integer, Integer> reflector) {
+        for (int i = 1; i != MAX_REFLECTOR_INDEX; i++) {
+            reflector.put(i , MAX_REFLECTOR_INDEX + i);
+        }
+        reflector.putAll(reflector.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getValue, Map.Entry::getKey)));
     }
 }

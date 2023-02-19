@@ -16,11 +16,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Slf4j
 class ChristopherServiceApplicationTests {
     @Autowired
-    private EnigmaController enigmaController;
-    @Autowired
     private ChristopherService christopherService;
 
     @Test
     void checkEncoding() {
+        christopherService.getSettings("znfzlj", "maksim");
     }
 }

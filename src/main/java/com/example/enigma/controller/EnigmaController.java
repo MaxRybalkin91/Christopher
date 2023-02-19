@@ -15,15 +15,6 @@ public class EnigmaController {
 
     @PostMapping
     public String encode(@RequestBody EncodeRequest request) {
-        final String requestedText = request.getText();
-        if (!requestedText.matches(PATTERN)) {
-            throw new RuntimeException("Only letters are allowed!");
-        }
-        final char[] requestedChar = request.getText().toCharArray();
-        final StringBuilder response = new StringBuilder();
-        for (char c : requestedChar) {
-            response.append(christopherService.getEncoded(c));
-        }
-        return response.toString();
+        return "";
     }
 }
