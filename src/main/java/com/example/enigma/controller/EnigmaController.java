@@ -1,19 +1,17 @@
 package com.example.enigma.controller;
 
 import com.example.enigma.model.rest.EncodeRequest;
-import com.example.enigma.service.EnigmaService;
+import com.example.enigma.service.ChristopherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Locale;
-
 @RestController
 @RequiredArgsConstructor
 public class EnigmaController {
     private static final String PATTERN = "[A-Za-z]+";
-    private final EnigmaService enigmaService;
+    private final ChristopherService christopherService;
 
     @PostMapping
     public String encode(@RequestBody EncodeRequest request) {
@@ -24,7 +22,7 @@ public class EnigmaController {
         final char[] requestedChar = request.getText().toCharArray();
         final StringBuilder response = new StringBuilder();
         for (char c : requestedChar) {
-            response.append(enigmaService.getEncoded(c));
+            response.append(christopherService.getEncoded(c));
         }
         return response.toString();
     }
