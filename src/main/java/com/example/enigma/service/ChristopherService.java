@@ -71,22 +71,22 @@ public class ChristopherService {
         put('z', 26);
     }};
 
-    private Map<Character, Character> fastChars = new HashMap<>();
-    private Map<Integer, Integer> fastLeftToRightIndexes = new HashMap<>();
-    private Map<Integer, Integer> fastRightToLeftIndexes = new HashMap<>();
-    private Map<Character, Character> mediumChars = new HashMap<>();
-    private Map<Integer, Integer> mediumLeftToRightIndexes = new HashMap<>();
-    private Map<Integer, Integer> mediumRightToLeftIndexes = new HashMap<>();
-    private Map<Character, Character> slowChars = new HashMap<>();
-    private Map<Integer, Integer> slowLeftToRightIndexes = new HashMap<>();
-    private Map<Integer, Integer> slowRightToLeftIndexes = new HashMap<>();
-    private Map<Integer, Integer> reflector = new HashMap<>();
+    private Map<Character, Character> fastChars;
+    private Map<Integer, Integer> fastLeftToRightIndexes;
+    private Map<Integer, Integer> fastRightToLeftIndexes;
+    private Map<Character, Character> mediumChars;
+    private Map<Integer, Integer> mediumLeftToRightIndexes;
+    private Map<Integer, Integer> mediumRightToLeftIndexes;
+    private Map<Character, Character> slowChars;
+    private Map<Integer, Integer> slowLeftToRightIndexes;
+    private Map<Integer, Integer> slowRightToLeftIndexes;
+    private Map<Integer, Integer> reflector;
 
     public void getSettings(String encoded, String search) {
         int fastRotorPosition = 1;
         int mediumRotorPosition = 1;
         int slowRotorPosition = 1;
-        int reflectorTopIndex = 1;
+        int reflectorTopIndex = 0;
         int requiredIterations = 26 * 26 * 26;
         int iterates = 0;
         String encodedCopy = "";
@@ -97,6 +97,7 @@ public class ChristopherService {
             mediumRightToLeftIndexes = new HashMap<>();
             slowLeftToRightIndexes = new HashMap<>();
             slowRightToLeftIndexes = new HashMap<>();
+            reflector = new HashMap<>();
             
             encodedCopy = encoded;
             for (int i = START_ROTOR_POSITION; i <= END_ROTOR_POSITION; i++) {
@@ -111,8 +112,21 @@ public class ChristopherService {
             slowLeftToRightIndexes = slowRightToLeftIndexes.entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
-            rotate(fastRotorPosition, mediumRotorPosition, slowRotorPosition);
-            fillReflector(reflector);
+            fastRotorPosition++;
+            if (fastRotorPosition > END_ROTOR_POSITION) {
+                fastRotorPosition = START_ROTOR_POSITION;
+                mediumRotorPosition += 1;
+            }
+            if (mediumRotorPosition > END_ROTOR_POSITION) {
+                mediumRotorPosition = START_ROTOR_POSITION;
+                slowRotorPosition += 1;
+            }
+            if (slowRotorPosition > END_ROTOR_POSITION) {
+                fastRotorPosition = 1;
+                mediumRotorPosition = 1;
+                slowRotorPosition = 1;
+            }
+            fillReflector(reflector, reflectorTopIndex);
 
             final StringBuilder decoded = new StringBuilder();
             for (char toDecode : encodedCopy.toCharArray()) {
@@ -163,28 +177,19 @@ public class ChristopherService {
         System.out.println("Got it!!!");
     }
 
-    private void rotate(Integer fastRotorPosition, Integer mediumRotorPosition, Integer slowRotorPosition) {
-        fastRotorPosition++;
-        if (fastRotorPosition > END_ROTOR_POSITION) {
-            fastRotorPosition = START_ROTOR_POSITION;
-            mediumRotorPosition += 1;
-        }
-        if (mediumRotorPosition > END_ROTOR_POSITION) {
-            mediumRotorPosition = START_ROTOR_POSITION;
-            slowRotorPosition += 1;
-        }
-        if (slowRotorPosition > END_ROTOR_POSITION) {
-            fastRotorPosition = 1;
-            mediumRotorPosition = 1;
-            slowRotorPosition = 1;
-        }
-    }
-
-    private void fillReflector(Map<Integer, Integer> reflector) {
-        for (int i = 1; i != MAX_REFLECTOR_INDEX; i++) {
+    private void fillReflector(Map<Integer, Integer> reflector, int reflectorTopIndex) {
+        for (int i = 1; i != MAX_REFLECTOR_INDEX + 1; i++) {
             reflector.put(i , MAX_REFLECTOR_INDEX + i);
         }
         reflector.putAll(reflector.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getValue, Map.Entry::getKey)));
+        reflector.entrySet().forEach(entry -> {
+            int newValue = entry.getValue() + reflectorTopIndex;
+            if (newValue > 26) {
+                newValue -= 26;
+            }
+            entry.setValue(newValue);
+        });
+        //System.out.println("Reflector pairs are: " + reflector);
     }
 }
